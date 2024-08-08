@@ -259,11 +259,12 @@ void os::Linux::init_thread_fpu_state(void) {
 }
 
 int os::Linux::get_fpu_control_word() {
-  ShouldNotCallThis();
+  // Nothing to do
+  return 0;
 }
 
 void os::Linux::set_fpu_control_word(int fpu) {
-  ShouldNotCallThis();
+  // Nothing to do
 }
 
 bool os::is_allocatable(size_t bytes) {
