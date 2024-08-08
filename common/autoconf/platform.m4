@@ -42,6 +42,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
+    alpha*)
+      VAR_CPU=alpha
+      VAR_CPU_ARCH=alpha
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     arm*)
       VAR_CPU=arm
       VAR_CPU_ARCH=arm
@@ -51,6 +57,48 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
     aarch64)
       VAR_CPU=aarch64
       VAR_CPU_ARCH=aarch64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    m68k)
+      VAR_CPU=m68k
+      VAR_CPU_ARCH=m68k
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mips)
+      VAR_CPU=mips
+      VAR_CPU_ARCH=mips
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mipsel)
+      VAR_CPU=mipsel
+      VAR_CPU_ARCH=mipsel
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    mipsn32)
+      VAR_CPU=mipsn32
+      VAR_CPU_ARCH=mipsn32
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mipsn32el)
+      VAR_CPU=mipsn32el
+      VAR_CPU_ARCH=mipsn32el
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    mips64)
+      VAR_CPU=mips64
+      VAR_CPU_ARCH=mips64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=big
+      ;;
+    mips64el)
+      VAR_CPU=mips64el
+      VAR_CPU_ARCH=mips64el
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
@@ -70,6 +118,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU=ppc64le
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    sh*)
+      VAR_CPU=sh
+      VAR_CPU_ARCH=sh
+      VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
     s390)
@@ -381,6 +435,11 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
 
   # ZERO_ARCHDEF is used to enable architecture-specific code
   case "${OPENJDK_TARGET_CPU}" in
+    alpha*)  ZERO_ARCHDEF=ALPHA ;;
+    m68k)  ZERO_ARCHDEF=M68K ;;
+    mips|mipsn32|mips64)  ZERO_ARCHDEF=MIPS ;;
+    mipsel|mipsn32el|mips64el)  ZERO_ARCHDEF=MIPSEL ;;
+    sh*)   ZERO_ARCHDEF=ZERO_SH  ;;
     ppc)     ZERO_ARCHDEF=PPC32 ;;
     ppc64)   ZERO_ARCHDEF=PPC64 ;;
     s390*)   ZERO_ARCHDEF=S390  ;;
