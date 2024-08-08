@@ -5103,6 +5103,7 @@ void os::init(void) {
 
   pthread_mutex_init(&dl_mutex, NULL);
 
+NOT_ZERO (
   // If the pagesize of the VM is greater than 8K determine the appropriate
   // number of initial guard pages.  The user can change this with the
   // command line arguments, if needed.
@@ -5116,6 +5117,7 @@ void os::init(void) {
   Linux::_pthread_setname_np =
     (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
 
+)
 }
 
 // To install functions for atexit system call
@@ -5182,9 +5184,16 @@ jint os::init_2(void)
    *   We are not sure whether this causes errors, so simply print a warning.
    */
   size_t min_stack_allowed_jdk6 = os::Linux::min_stack_allowed;
+NOT_ZERO (
   os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
             (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
                     (2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::vm_default_page_size());
+)
+ZERO_ONLY (
+  os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,          
+            (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+                     2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::page_size());
+)
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&

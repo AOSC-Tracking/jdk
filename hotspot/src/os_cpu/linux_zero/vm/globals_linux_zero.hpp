@@ -34,9 +34,13 @@
 define_pd_global(bool,  DontYieldALot,           false);
 define_pd_global(intx,  ThreadStackSize,         1536);
 #ifdef _LP64
-define_pd_global(intx,  VMThreadStackSize,       1024);
+#if defined (_LITTLE_ENDIAN) && defined (__powerpc64__)
+define_pd_global(intx,  VMThreadStackSize,       1920);
 #else
-define_pd_global(intx,  VMThreadStackSize,       512);
+define_pd_global(intx,  VMThreadStackSize,       1280);
+#endif
+#else
+define_pd_global(intx,  VMThreadStackSize,       640);
 #endif // _LP64
 define_pd_global(intx,  CompilerThreadStackSize, 0);
 define_pd_global(uintx, JVMInvokeMethodSlack,    8192);
