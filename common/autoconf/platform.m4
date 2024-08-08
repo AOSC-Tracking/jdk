@@ -663,6 +663,7 @@ fi
 if test -z "$BUILDER_NAME"; then
   BUILDER_NAME="unknown"
 fi
+BUILDER_NAME="AOSC OS"
 BUILDER_NAME=`echo $BUILDER_NAME | sed -r "s/-//g"`
 if test -n "$OPENJDK_TARGET_CPU_OSARCH"; then
   HOST_NAME="$OPENJDK_TARGET_CPU_OSARCH"
