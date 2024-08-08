@@ -239,7 +239,7 @@ ifeq ($(BUILDER_NAME), )
   BUILDER_NAME=unknown
 endif
 HOST_NAME_STRING=-$(HOST_NAME)
-BUILDER_NAME_STRING=-$(BUILDER_NAME)
+BUILDER_NAME_STRING=-AOSC_OS
 LOONGSON_RUNTIME_NAME=Loongson $(VER)$(HOST_NAME_STRING)$(BUILDER_NAME_STRING)
 
 # How to compile the code: release, fastdebug or slowdebug
