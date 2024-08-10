@@ -2106,7 +2106,7 @@ jint
 ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
 {
     FILE *jvmCfg;
-    char line[MAXPATHLEN+20];
+    char line[MAXPATHLEN+30];
     int cnt = 0;
     int lineno = 0;
     jlong start = 0, end = 0;
@@ -2119,6 +2119,11 @@ ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
     }
 
     jvmCfg = fopen(jvmCfgName, "r");
+    if (jvmCfg == NULL) {
+      char cfgName[strlen(jvmCfgName)+10];
+      sprintf(cfgName, "%s-default", jvmCfgName);
+      jvmCfg = fopen(cfgName, "r");
+    }
     if (jvmCfg == NULL) {
       if (!speculative) {
         JLI_ReportErrorMessage(CFG_ERROR6, jvmCfgName);
