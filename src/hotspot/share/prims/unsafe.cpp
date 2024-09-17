@@ -388,7 +388,9 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject
   void* p = index_oop_from_field_offset_long(base, offset);
 
   {
+#if !defined(IA32) || !defined(TARGET_ARCH_x86)
     GuardUnsafeAccess guard(thread);
+#endif
     if (StubRoutines::unsafe_setmemory() != nullptr) {
       MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
       StubRoutines::UnsafeSetMemory_stub()(p, sz, value);
