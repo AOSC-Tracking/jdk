@@ -21,6 +21,12 @@
  * questions.
  */
 
+/*
+ * This file has been modified by Loongson Technology in 2023. These
+ * modifications are Copyright (c) 2023, Loongson Technology, and are made
+ * available on the same license terms set forth above.
+ */
+
 /**
  * @test
  * @bug 8294588
@@ -28,7 +34,8 @@
  * @requires vm.compiler2.enabled
  * @requires (os.simpleArch == "x64" & (vm.cpu.features ~= ".*avx512f.*" | vm.cpu.features ~= ".*f16c.*")) |
  *           os.arch == "aarch64" |
- *           (os.arch == "riscv64" & vm.cpu.features ~= ".*zvfh.*")
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*zvfh.*") |
+ *           os.arch == "loongarch64"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestFloatConversionsVector
  */
