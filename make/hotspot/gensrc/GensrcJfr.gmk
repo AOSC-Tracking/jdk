@@ -41,6 +41,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JFR_TOOLS, \
     SETUP := GENERATE_JFRBYTECODE, \
     SRC := $(JFR_TOOLS_SRCDIR), \
     BIN := $(JFR_TOOLS_OUTPUTDIR), \
+    INCLUDES := build/tools/jfr, \
 ))
 
 TARGETS += $(BUILD_JFR_TOOLS)
