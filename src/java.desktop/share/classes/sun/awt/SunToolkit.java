@@ -1704,6 +1704,9 @@ public abstract class SunToolkit extends Toolkit
             if (tk instanceof SunToolkit) {
                 systemAAFonts = System.getProperty("awt.useSystemAAFontSettings");
             }
+            if (systemAAFonts == null) {
+                systemAAFonts = "on";
+            }
             if (systemAAFonts != null) {
                 useSystemAAFontSettings = Boolean.parseBoolean(systemAAFonts);
                 /* If it is anything other than "true", then it may be
