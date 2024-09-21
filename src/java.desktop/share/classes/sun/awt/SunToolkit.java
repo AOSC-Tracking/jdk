@@ -1769,6 +1769,9 @@ public abstract class SunToolkit extends Toolkit
                     AccessController.doPrivileged(
                          new GetPropertyAction("awt.useSystemAAFontSettings"));
             }
+            if (systemAAFonts == null) {
+                systemAAFonts = "on";
+            }
             if (systemAAFonts != null) {
                 useSystemAAFontSettings = Boolean.parseBoolean(systemAAFonts);
                 /* If it is anything other than "true", then it may be
