@@ -28,6 +28,10 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/thread.hpp"
 
+#if ! (defined(__GLIBC__) || defined(__UCLIBC__))
+#include <asm/ptrace.h>
+#endif
+
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
 
@@ -65,14 +69,23 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
   // if we were running Java code when SIGPROF came in.
   if (isInJava) {
     ucontext_t* uc = (ucontext_t*) ucontext;
-    address pc = (address)uc->uc_mcontext.regs->nip;
+    #if defined(__GLIBC__) || defined(__UCLIBC__)
+      address pc = (address)uc->uc_mcontext.regs->nip;
+    #else // Musl
+      address pc = (address)uc->uc_mcontext.gp_regs[PT_NIP];
+    #endif
+
 
     if (pc == NULL) {
       // ucontext wasn't useful
       return false;
     }
 
-    frame ret_frame((intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/], pc);
+    #if defined(__GLIBC__) || defined(__UCLIBC__)
+      frame ret_frame((intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/], pc);
+    #else // Musl
+      frame ret_frame((intptr_t*)uc->uc_mcontext.gp_regs[1/*REG_SP*/], pc);
+    #endif
 
     if (ret_frame.fp() == NULL) {
       // The found frame does not have a valid frame pointer.
@@ -91,7 +104,11 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       if (!Method::is_valid_method(m)) return false;
       if (!Metaspace::contains(m->constMethod())) return false;
 
+#if defined(__GLIBC__) || defined(__UCLIBC__)
       uint64_t reg_bcp = uc->uc_mcontext.regs->gpr[14/*R14_bcp*/];
+#else // Musl
+      uint64_t reg_bcp = uc->uc_mcontext.gp_regs[14/*R14_bcp*/];
+#endif
       uint64_t istate_bcp = istate->bcp;
       uint64_t code_start = (uint64_t)(m->code_base());
       uint64_t code_end = (uint64_t)(m->code_base() + m->code_size());
