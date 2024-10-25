@@ -22,6 +22,12 @@
  * questions.
  */
 
+/*
+ * This file has been modified by Loongson Technology in 2023, These
+ * modifications are Copyright (c) 2023, Loongson Technology, and are made
+ * available on the same license terms set forth above.
+ */
+
 /**
 * @test
 * @bug 8297172 8331993 8349637
@@ -29,7 +35,8 @@
 * @summary Test vectorization of numberOfTrailingZeros/numberOfLeadingZeros for Long
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
-*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*" & (vm.opt.UseSVE == "null" | vm.opt.UseSVE > 0))
+*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*" & (vm.opt.UseSVE == "null" | vm.opt.UseSVE > 0)) |
+*           (os.simpleArch == "loongarch64")
 * @library /test/lib /
 * @modules jdk.incubator.vector
 * @run driver compiler.vectorization.TestNumberOfContinuousZeros
