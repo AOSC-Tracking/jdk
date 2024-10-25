@@ -48,6 +48,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#if ! (defined(__GLIBC__) || defined(__UCLIBC__))
+#include <asm/ptrace.h>
+#endif
+
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing
 #else
@@ -1305,7 +1309,11 @@ bool MacroAssembler::is_load_from_polling_page(int instruction, void* ucontext,
   // the safepoing polling page.
   ucontext_t* uc = (ucontext_t*) ucontext;
   // Set polling address.
+#if defined(__GLIBC__) || defined(__UCLIBC__)
   address addr = (address)uc->uc_mcontext.regs->gpr[ra] + (ssize_t)ds;
+#else // Musl
+  address addr = (address)uc->uc_mcontext.gp_regs[ra] + (ssize_t) ds;
+#endif
   if (polling_address_ptr != NULL) {
     *polling_address_ptr = addr;
   }
@@ -1368,11 +1376,20 @@ address MacroAssembler::get_stack_bang_address(int instruction, void *ucontext) 
       || (is_stdu(instruction) && rs == 1)) {
     int ds = inv_ds_field(instruction);
     // return banged address
+#if defined(__GLIBC__) || defined(__UCLIBC__)
     return ds+(address)uc->uc_mcontext.regs->gpr[ra];
+#else // Musl
+    return ds+(address)uc->uc_mcontext.gp_regs[ra];
+#endif
   } else if (is_stdux(instruction) && rs == 1) {
     int rb = inv_rb_field(instruction);
+#if defined(__GLIBC__) || defined(__UCLIBC__)
     address sp = (address)uc->uc_mcontext.regs->gpr[1];
     long rb_val = (long)uc->uc_mcontext.regs->gpr[rb];
+#else // Musl
+    address sp = (address)uc->uc_mcontext.gp_regs[1];
+    long rb_val = (long)uc->uc_mcontext.gp_regs[rb];
+#endif
     return ra != 1 || rb_val >= 0 ? NULL         // not a stack bang
                                   : sp + rb_val; // banged address
   }
