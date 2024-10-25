@@ -76,6 +76,10 @@
 # include <poll.h>
 # include <ucontext.h>
 
+#if ! (defined(__GLIBC__) || defined(__UCLIBC__))
+#include <asm/ptrace.h>
+#endif
+
 
 address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);
@@ -103,24 +107,42 @@ address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
   // - if uc was filled by getcontext(), it is undefined - getcontext() does not fill
   //   it because the volatile registers are not needed to make setcontext() work.
   //   Hopefully it was zero'd out beforehand.
+#if defined(__GLIBC__) || defined(__UCLIBC__)
   guarantee(uc->uc_mcontext.regs != NULL, "only use ucontext_get_pc in sigaction context");
   return (address)uc->uc_mcontext.regs->nip;
+#else // Musl
+  guarantee(uc->uc_mcontext.gp_regs != NULL, "only use ucontext_get_pc in sigaction context");
+  return (address)uc->uc_mcontext.gp_regs[PT_NIP];
+#endif
 }
 
 // modify PC in ucontext.
 // Note: Only use this for an ucontext handed down to a signal handler. See comment
 // in ucontext_get_pc.
 void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
+#if defined(__GLIBC__) || defined(__UCLIBC__)
   guarantee(uc->uc_mcontext.regs != NULL, "only use ucontext_set_pc in sigaction context");
   uc->uc_mcontext.regs->nip = (unsigned long)pc;
+#else // Musl
+  guarantee(uc->uc_mcontext.gp_regs != NULL, "only use ucontext_set_pc in sigaction context");
+  uc->uc_mcontext.gp_regs[PT_NIP] = (unsigned long)pc;
+#endif
 }
 
 static address ucontext_get_lr(const ucontext_t * uc) {
+#if defined(__GLIBC__) || defined(__UCLIBC__)
   return (address)uc->uc_mcontext.regs->link;
+#else // Musl
+  return (address)uc->uc_mcontext.gp_regs[PT_LNK];
+#endif
 }
 
 intptr_t* os::Linux::ucontext_get_sp(const ucontext_t * uc) {
+#if defined(__GLIBC__) || defined(__UCLIBC__)
   return (intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/];
+#else // Musl
+  return (intptr_t*)uc->uc_mcontext.gp_regs[1/*REG_SP*/];
+#endif
 }
 
 intptr_t* os::Linux::ucontext_get_fp(const ucontext_t * uc) {
@@ -128,7 +150,11 @@ intptr_t* os::Linux::ucontext_get_fp(const ucontext_t * uc) {
 }
 
 static unsigned long ucontext_get_trap(const ucontext_t * uc) {
+#if defined(__GLIBC__) || defined(__UCLIBC__)
   return uc->uc_mcontext.regs->trap;
+#else // Musl
+  return uc->uc_mcontext.gp_regs[PT_TRAP];
+#endif
 }
 
 address os::fetch_frame_from_context(const void* ucVoid,
@@ -194,7 +220,11 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // 3.2.1 "Machine State Register"), however note that ISA notation for bit
     // numbering is MSB 0, so for normal bit numbering (LSB 0) they come to be
     // bits 33 and 34. It's not related to endianness, just a notation matter.
+#if defined(__GLIBC__) || defined(__UCLIBC__)
     if (second_uc->uc_mcontext.regs->msr & 0x600000000) {
+#else // Musl
+    if (second_uc->uc_mcontext.gp_regs[PT_MSR] & 0x600000000) {
+#endif
       if (TraceTraps) {
         tty->print_cr("caught signal in transaction, "
                         "ignoring to jump to abort handler");
@@ -450,6 +480,7 @@ void os::print_context(outputStream *st, const void *context) {
   const ucontext_t* uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
+#if defined(__GLIBC__) || defined(__UCLIBC__)
   st->print("pc =" INTPTR_FORMAT "  ", uc->uc_mcontext.regs->nip);
   st->print("lr =" INTPTR_FORMAT "  ", uc->uc_mcontext.regs->link);
   st->print("ctr=" INTPTR_FORMAT "  ", uc->uc_mcontext.regs->ctr);
@@ -458,6 +489,16 @@ void os::print_context(outputStream *st, const void *context) {
     st->print("r%-2d=" INTPTR_FORMAT "  ", i, uc->uc_mcontext.regs->gpr[i]);
     if (i % 3 == 2) st->cr();
   }
+#else // Musl
+  st->print("pc =" INTPTR_FORMAT "  ", uc->uc_mcontext.gp_regs[PT_NIP]);
+  st->print("lr =" INTPTR_FORMAT "  ", uc->uc_mcontext.gp_regs[PT_LNK]);
+  st->print("ctr=" INTPTR_FORMAT "  ", uc->uc_mcontext.gp_regs[PT_CTR]);
+  st->cr();
+  for (int i = 0; i < 32; i++) {
+    st->print("r%-2d=" INTPTR_FORMAT "  ", i, uc->uc_mcontext.gp_regs[i]);
+    if (i % 3 == 2) st->cr();
+  }
+#endif
   st->cr();
   st->cr();
 }
@@ -487,12 +528,22 @@ void os::print_register_info(outputStream *st, const void *context) {
   st->print_cr("Register to memory mapping:");
   st->cr();
 
+#if defined(__GLIBC__) || defined(__UCLIBC__)
   st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->nip);
   st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->link);
   st->print("ctr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->ctr);
+#else // Musl
+  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.gp_regs[PT_NIP]);
+  st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.gp_regs[PT_LNK]);
+  st->print("ctr ="); print_location(st, (intptr_t)uc->uc_mcontext.gp_regs[PT_CTR]);
+#endif
   for (int i = 0; i < 32; i++) {
     st->print("r%-2d=", i);
+#if defined(__GLIBC__) || defined(__UCLIBC__)
     print_location(st, uc->uc_mcontext.regs->gpr[i]);
+#else // Musl
+    print_location(st, uc->uc_mcontext.gp_regs[i]);
+#endif
   }
   st->cr();
 }
