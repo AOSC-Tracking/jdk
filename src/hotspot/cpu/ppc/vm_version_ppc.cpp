@@ -52,6 +52,10 @@
 #endif
 #endif
 
+#if ! (defined(__GLIBC__) || defined(__UCLIBC__))
+#include <asm/ptrace.h>
+#endif
+
 bool VM_Version::_is_determine_features_test_running = false;
 uint64_t VM_Version::_dscr_val = 0;
 
@@ -709,7 +713,7 @@ void VM_Version::determine_features() {
   unsigned long auxv = getauxval(AT_HWCAP2);
 
   if (auxv & PPC_FEATURE2_HTM_NOSC) {
-    if (auxv & PPC_FEATURE2_HAS_HTM) {
+    if (auxv & PPC_FEATURE2_HTM) {
       // TM on POWER8 and POWER9 in compat mode (VM) is supported by the JVM.
       // TM on POWER9 DD2.1 NV (baremetal) is not supported by the JVM (TM on
       // POWER9 DD2.1 NV has a few issues that need a couple of firmware
