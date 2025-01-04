@@ -1838,12 +1838,14 @@ bool Arguments::check_vm_args_consistency() {
 #endif
 
 #ifndef _LP64
+#ifndef LOONGARCH64
   if (LockingMode == LM_LEGACY) {
     FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
     // Self-forwarding in bit 3 of the mark-word conflicts
     // with 4-byte-aligned stack-locks.
     warning("Legacy locking not supported on this platform");
   }
+#endif
 #endif
 
   if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
