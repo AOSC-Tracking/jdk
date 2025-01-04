@@ -41,6 +41,8 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -955,7 +957,7 @@ public class Properties extends Hashtable<Object,Object> {
         if (sysPropVal != null && !sysPropVal.isEmpty()) {
             writeComments(bw, sysPropVal);
         } else {
-            bw.write("#" + new Date());
+            bw.write("#" + getFormattedTimestamp());
             bw.newLine();
         }
     }
@@ -1599,5 +1601,26 @@ public class Properties extends Hashtable<Object,Object> {
             map.put(key, value);
         }
         this.map = map;
+    }
+
+    /**
+     * Returns a formatted timestamp to be used in the properties file header.
+     * The date used is the current date, unless the SOURCE_DATE_EPOCH
+     * environment variable is specified. In this case the format used is
+     * locale and timezone insensitive to ensure the output is reproducible.
+     */
+    @SuppressWarnings("removal")
+    private static String getFormattedTimestamp() {
+        final String epoch = AccessController.doPrivileged(
+            (PrivilegedAction<String>)() -> System.getenv("SOURCE_DATE_EPOCH"));
+        if (epoch == null) {
+            return new Date().toString();
+        } else {
+            // Use the SOURCE_DATE_EPOCH timestamp and make the format locale/timezone insensitive
+            java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", java.util.Locale.ENGLISH);
+            fmt.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            Date date = new Date(1000 * Long.parseLong(epoch));
+            return fmt.format(date);
+        }
     }
 }
