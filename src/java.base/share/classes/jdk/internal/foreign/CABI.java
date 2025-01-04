@@ -44,6 +44,7 @@ public enum CABI {
     LINUX_PPC_64_LE,
     LINUX_RISCV_64,
     LINUX_S390,
+    LINUX_LOONGARCH_64,
     FALLBACK,
     UNSUPPORTED;
 
@@ -94,7 +95,11 @@ public enum CABI {
                 if (OperatingSystem.isLinux()) {
                     return LINUX_S390;
                 }
-        }
+            } else if (arch.equals("loongarch64")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_LOONGARCH_64;
+                }
+            }
         } else if (FallbackLinker.isSupported()) {
             return FALLBACK; // fallback linker
         }

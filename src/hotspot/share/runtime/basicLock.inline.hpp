@@ -22,6 +22,12 @@
  *
  */
 
+/*
+ * This file has been modified by Loongson Technology in 2024. These
+ * modifications are Copyright (c) 2024, Loongson Technology, and are made
+ * available on the same license terms set forth above.
+ */
+
 #ifndef SHARE_RUNTIME_BASICLOCK_INLINE_HPP
 #define SHARE_RUNTIME_BASICLOCK_INLINE_HPP
 

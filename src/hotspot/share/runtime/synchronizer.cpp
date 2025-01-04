@@ -22,6 +22,12 @@
  *
  */
 
+/*
+ * This file has been modified by Loongson Technology in 2024, These
+ * modifications are Copyright (c) 2022, 2024, Loongson Technology, and are made
+ * available on the same license terms set forth above.
+ */
+
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -387,7 +393,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
 }
 
 static bool useHeavyMonitors() {
-#if defined(X86) || defined(AARCH64) || defined(PPC64) || defined(RISCV64) || defined(S390)
+#if defined(X86) || defined(AARCH64) || defined(PPC64) || defined(RISCV64) || defined(S390) || defined(LOONGARCH64)
   return LockingMode == LM_MONITOR;
 #else
   return false;
