@@ -1135,6 +1135,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
       __ MacroAssembler::call_VM_leaf_base(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr(), 1);
     } else if (stub->is_atomic()) {
       __ MacroAssembler::call_VM_leaf_base(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), 1);
+    } else if (stub->is_nokeepalive()) {
+      __ MacroAssembler::call_VM_leaf_base(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr(), 1);
     } else {
       __ MacroAssembler::call_VM_leaf_base(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), 1);
     }
