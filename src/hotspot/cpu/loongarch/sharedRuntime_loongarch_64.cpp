@@ -1130,6 +1130,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bind(call_thaw);
 
+  ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
   __ call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()), relocInfo::runtime_call_type);
   oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
   ContinuationEntry::_return_pc_offset = __ pc() - start;
@@ -1139,6 +1140,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   // We've succeeded, set sp to the ContinuationEntry
   __ ld_d(SP, Address(TREG, JavaThread::cont_entry_offset()));
+  ContinuationEntry::_cleanup_offset = __ pc() - start;
   continuation_enter_cleanup(masm);
   __ leave();
   __ jr(RA);
@@ -1235,6 +1237,10 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   OopMap* map = new OopMap(framesize, 1);
   oop_maps->add_gc_map(the_pc - start, map);
+}
+
+void SharedRuntime::continuation_enter_cleanup(MacroAssembler* masm) {
+  ::continuation_enter_cleanup(masm);
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
@@ -1706,12 +1712,20 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // Change state to native (we save the return address in the thread, since it might not
-  // be pushed on the stack when we do a a stack traversal). It is enough that the pc()
+  // be pushed on the stack when we do a stack traversal). It is enough that the pc()
   // points into the right code segment. It does not have to be the correct return pc.
-  // We use the same pc/oopMap repeatedly when we call out
+  // We use the same pc/oopMap repeatedly when we call out.
 
   Label native_return;
-  __ set_last_Java_frame(SP, noreg, native_return);
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // For convenience we use the pc we want to resume to in case of preemption on Object.wait.
+    __ set_last_Java_frame(SP, noreg, native_return);
+  } else {
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    __ set_last_Java_frame(SP, noreg, __ pc(), T0);
+  }
 
   // We have all of the arguments setup at this point. We must not touch any register
   // argument registers at this point (what if we save/restore them there are no oop?
@@ -1783,15 +1797,15 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // Save the test result, for recursive case, the result is zero
       __ st_d(swap_reg, lock_reg, mark_word_offset);
       __ bne(swap_reg, R0, slow_path_lock);
+
+      __ bind(count);
+      __ inc_held_monitor_count(T0);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       // FIXME
       Register tmp = T1;
       __ lightweight_lock(lock_reg, obj_reg, swap_reg, tmp, SCR1, slow_path_lock);
     }
-
-    __ bind(count);
-    __ increment(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -1815,9 +1829,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // do the call
   __ call(native_func, relocInfo::runtime_call_type);
-  __ bind(native_return);
-
-  oop_maps->add_gc_map(((intptr_t)__ pc()) - start, map);
 
   // WARNING - on Windows Java Natives use pascal calling convention and pop the
   // arguments off of the stack. We could just re-adjust the stack pointer here
@@ -1896,6 +1907,19 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ st_w(AT, TREG, in_bytes(JavaThread::thread_state_offset()));
   }
   __ bind(after_transition);
+
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // Check preemption for Object.wait()
+    __ ld_d(T1, Address(TREG, JavaThread::preempt_alternate_return_offset()));
+    __ beqz(T1, native_return);
+    __ st_d(R0, Address(TREG, JavaThread::preempt_alternate_return_offset()));
+    __ jr(T1);
+    __ bind(native_return);
+
+    intptr_t the_pc = (intptr_t)__ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
+  }
+
   Label reguard;
   Label reguard_done;
   __ ld_w(AT, TREG, in_bytes(JavaThread::stack_guard_state_offset()));
@@ -1922,7 +1946,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // Simple recursive lock?
       __ ld_d(AT, FP, lock_slot_fp_offset);
       __ bnez(AT, not_recursive);
-      __ decrement(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
+      __ dec_held_monitor_count(T0);
       __ b(done);
     }
 
@@ -1944,11 +1968,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       Label count;
       __ cmpxchg(Address(obj_reg, 0), lock_reg, T8, AT, false, true /* acquire */, count, &slow_path_unlock);
       __ bind(count);
-      __ decrement(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
+      __ dec_held_monitor_count(T0);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       __ lightweight_unlock(obj_reg, lock_reg, swap_reg, SCR1, slow_path_unlock);
-      __ decrement(Address(TREG, JavaThread::held_monitor_count_offset()));
     }
 
     // slow path re-enters here
@@ -2028,7 +2051,14 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(StackAlignmentInBytes == 16, "must be");
     __ bstrins_d(SP, R0, 3, 0); // align stack as required by ABI
 
+    // Not a leaf but we have last_Java_frame setup as we want.
+    // We don't want to unmount in case of contention since that would complicate preserving
+    // the arguments that had already been marshalled into the native convention. So we force
+    // the freeze slow path to find this native wrapper frame (see recurse_freeze_native_frame())
+    // and pin the vthread. Otherwise the fast path won't find it since we don't walk the stack.
+    __ push_cont_fastpath();
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), relocInfo::runtime_call_type);
+    __ pop_cont_fastpath();
     __ move(SP, S2);
     __ addi_d(SP, SP, 3*wordSize);
 
@@ -2140,6 +2170,10 @@ uint SharedRuntime::in_preserve_stack_slots() {
 // when an interrupt occurs.
 uint SharedRuntime::out_preserve_stack_slots() {
    return 0;
+}
+
+VMReg SharedRuntime::thread_register() {
+  return TREG->as_VMReg();
 }
 
 //------------------------------generate_deopt_blob----------------------------

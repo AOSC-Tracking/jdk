@@ -40,7 +40,7 @@
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert_different_registers(hdr, obj, disp_hdr);
+  assert_different_registers(hdr, obj, disp_hdr, T1);
   int null_check_offset = -1;
 
   verify_oop(obj);
@@ -96,15 +96,15 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     bnez(hdr, slow_case);
     // done
     bind(done);
+    inc_held_monitor_count(T1);
   }
-  increment(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
   return null_check_offset;
 }
 
 void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
+  assert_different_registers(hdr, obj, disp_hdr, T1);
   Label done;
 
   if (LockingMode != LM_LIGHTWEIGHT) {
@@ -134,8 +134,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
     }
     // done
     bind(done);
+    dec_held_monitor_count(T1);
   }
-  decrement(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
 }
 
 // Defines obj, preserves var_size_in_bytes

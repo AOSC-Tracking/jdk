@@ -43,13 +43,13 @@
 
 // using the cr register as the bool result: 0 for failed; others success.
 void C2_MacroAssembler::fast_lock_c2(Register oop, Register box, Register flag,
-                                  Register disp_hdr, Register tmp) {
+                                  Register disp_hdr, Register tmp, Register tmp1) {
   Label cont;
   Label object_has_monitor;
   Label count, no_count;
 
   assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
-  assert_different_registers(oop, box, tmp, disp_hdr, flag);
+  assert_different_registers(oop, box, tmp, tmp1, disp_hdr, flag);
 
   // Load markWord from object into displaced_header.
   assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
@@ -91,7 +91,7 @@ void C2_MacroAssembler::fast_lock_c2(Register oop, Register box, Register flag,
     sub_d(disp_hdr, tmp, SP);
     li(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
     // If (mark & lock_mask) == 0 and mark - sp < page_size,
-    // we are stack-locking and goto cont,
+    // we are stack-locking and goto label locked,
     // hence we can store 0 as the displaced header in the box,
     // which indicates that it is a recursive lock.
     andr(tmp, disp_hdr, tmp);
@@ -103,12 +103,11 @@ void C2_MacroAssembler::fast_lock_c2(Register oop, Register box, Register flag,
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  // The object's monitor m is unlocked if m->owner is null,
-  // otherwise m->owner may contain a thread or a stack address.
-  //
-  // Try to CAS m->owner from null to current thread.
+  // Try to CAS owner (no owner => current thread's _lock_id).
   move(AT, R0);
   addi_d(tmp, disp_hdr, in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value);
+  Register tid = tmp1;
+  ld_d(tid, Address(TREG, JavaThread::monitor_owner_id_offset()));
   cmpxchg(Address(tmp, 0), AT, TREG, flag, true, true /* acquire */);
 
   // Store a non-null value into the box to avoid looking like a re-entrant
@@ -120,7 +119,7 @@ void C2_MacroAssembler::fast_lock_c2(Register oop, Register box, Register flag,
 
   bnez(flag, cont); // CAS success means locking succeeded
 
-  bne(AT, TREG, cont); // Check for recursive locking
+  bne(AT, tid, cont); // Check for recursive locking
 
   // Recursive lock case
   li(flag, 1);
@@ -132,7 +131,9 @@ void C2_MacroAssembler::fast_lock_c2(Register oop, Register box, Register flag,
   beqz(flag, no_count);
 
   bind(count);
-  increment(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
+  if (LockingMode == LM_LEGACY) {
+    inc_held_monitor_count(T0);
+  }
 
   bind(no_count);
 }
@@ -231,14 +232,16 @@ void C2_MacroAssembler::fast_unlock_c2(Register oop, Register box, Register flag
   beqz(flag, no_count);
 
   bind(count);
-  decrement(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
+  if (LockingMode == LM_LEGACY) {
+    dec_held_monitor_count(T0);
+  }
 
   bind(no_count);
 }
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register flag, Register tmp1, Register tmp2, Register tmp3) {
+void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register flag, Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-  assert_different_registers(obj, box, tmp1, tmp2, tmp3, flag);
+  assert_different_registers(obj, box, tmp1, tmp2, tmp3, tmp4, flag);
 
   // Handle inflated monitor.
   Label inflated;
@@ -306,6 +309,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     bind(inflated);
 
     const Register tmp1_monitor = tmp1;
+
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == tmp1_mark, "should be the same here");
     } else {
@@ -353,12 +357,14 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     lea(tmp2_owner_addr, owner_address);
 
     move(tmp3_owner, R0);
-    // CAS owner (null => current thread).
-    cmpxchg(Address(tmp2_owner_addr, 0), tmp3_owner, TREG, flag, true, true /* acquire */);
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
+    Register tid = tmp4;
+    ld_d(tid, Address(TREG, JavaThread::monitor_owner_id_offset()));
+    cmpxchg(Address(tmp2_owner_addr, 0), tmp3_owner, tid, flag, true, true /* acquire */);
     bnez(flag, locked);
 
     // Check if recursive.
-    bne(tmp3_owner, TREG, slow_path);
+    bne(tmp3_owner, tid, slow_path);
 
     // Recursive.
     increment(recursions_address, 1);
@@ -372,7 +378,6 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   bind(locked);
   // Set flag != 0
   li(flag, 1);
-  increment(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
 
 #ifdef ASSERT
   // Check that locked label is reached with flag != 0.
@@ -535,7 +540,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
   bind(unlocked);
   // Set flag != 0
   li(flag, 1);
-  decrement(Address(TREG, JavaThread::held_monitor_count_offset()), 1);
 
 #ifdef ASSERT
   // Check that unlocked label is reached with flag != 0.

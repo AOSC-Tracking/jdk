@@ -23,6 +23,7 @@
  *
  */
 
+#include "assembler_loongarch.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
@@ -43,6 +44,7 @@
 #include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "register_loongarch.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -54,6 +56,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -572,7 +575,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   // Restore stack bottom in case i2c adjusted stack
   __ ld_d(AT, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ alsl_d(SP, AT, FP, LogBytesPerWord-1);
+  __ alsl_d(SP, AT, FP, Interpreter::logStackElementSize);
   // and null it as marker that sp is now tos until next java call
   __ st_d(R0, FP, frame::interpreter_frame_last_sp_offset * wordSize);
 
@@ -692,6 +695,36 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ restore_bcp();
+  __ restore_locals();
+
+  // LoongArch does not needs to restore constant pool cache
+  // we don't have a register storing ptr to constant pool
+
+  // Restore Java expression stack pointer
+  __ ld_d(T0, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
+  // expr stack ptr = (T0 << logStackElementSize) + FP
+  __ alsl_d(SP, T0, FP, Interpreter::logStackElementSize);
+  // and null it as marker that esp is now tos until next java call
+  __ st_d(R0, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  // LoongArch does not need to restore extended SP
+  // because we don't have that thing
+
+  // Restore method
+  __ ld_d(Rmethod, Address(FP, frame::interpreter_frame_method_offset * wordSize));
+
+  // Restore dispatch
+  __ lea_long(Rdispatch, ExternalAddress((address)Interpreter::dispatch_table()));
+
+  __ jr(RA);
+
+  return start;
+}
 
 
 // Helpers for commoning out cases in the various type of method entries.
@@ -1245,7 +1278,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // result handler is in V0
   // set result handler
-  __ st_d(V0, FP, (frame::interpreter_frame_result_handler_offset)*wordSize);
+  // Save it in the frame in case of preemption; we cannot rely on callee saved registers.
+  __ st_d(V0, Address(FP, frame::interpreter_frame_result_handler_offset * wordSize));
 
 #define FIRSTPARA_SHIFT_COUNT 5
 #define SECONDPARA_SHIFT_COUNT 9
@@ -1352,8 +1386,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // call native method
+  __ push_cont_fastpath();
   __ jalr(T4);
-  __ bind(native_return);
+  __ pop_cont_fastpath();
   // result potentially in V0 or F0
 
 
@@ -1420,6 +1455,22 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   } else {
     __ st_w(t, TREG, in_bytes(JavaThread::thread_state_offset()));
   }
+
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ld_d(T1, Address(TREG, JavaThread::preempt_alternate_return_offset()));
+    __ beqz(T1, not_preempted);
+    __ st_d(R0, Address(TREG, JavaThread::preempt_alternate_return_offset()));
+    __ jr(T1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
+
   __ reset_last_Java_frame(TREG, true);
 
   if (CheckJNICalls) {
@@ -1892,7 +1943,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // expression stack if necessary.
   __ move(T8, SP);
   __ ld_d(AT, FP, frame::interpreter_frame_last_sp_offset * wordSize);
-  __ alsl_d(A2, AT, FP, LogBytesPerWord-1);
+  __ alsl_d(A2, AT, FP, Interpreter::logStackElementSize);
   // PC must point into interpreter here
   Label L;
   __ bind(L);
@@ -1901,7 +1952,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ reset_last_Java_frame(TREG, true);
   // Restore the last_sp and null it out
   __ ld_d(AT, FP, frame::interpreter_frame_last_sp_offset * wordSize);
-  __ alsl_d(SP, AT, FP, LogBytesPerWord-1);
+  __ alsl_d(SP, AT, FP, Interpreter::logStackElementSize);
   __ st_d(R0, FP, frame::interpreter_frame_last_sp_offset * wordSize);
 
 

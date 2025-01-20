@@ -94,6 +94,7 @@ constexpr Register LVP            = S7;
 // temporary callee saved register
 constexpr Register TSR            = S2;
 
+// java thread pointer
 constexpr Register TREG           = S6;
 
 constexpr Register S5_heapbase    = S5;

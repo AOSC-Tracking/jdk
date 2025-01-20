@@ -126,8 +126,11 @@ class MacroAssembler: public Assembler {
 
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
+  void push_cont_fastpath(Register java_thread = TREG);
+  void pop_cont_fastpath(Register java_thread = TREG);
+
+  void inc_held_monitor_count(Register tmp);
+  void dec_held_monitor_count(Register tmp);
 
   void flt_to_flt16(Register dst, FloatRegister src, FloatRegister tmp) {
     vfcvt_h_s(tmp, src, src);
@@ -247,6 +250,11 @@ class MacroAssembler: public Assembler {
   void set_last_Java_frame(Register last_java_sp,
                            Register last_java_fp,
                            Register last_java_pc);
+
+  void set_last_Java_frame(Register last_java_sp,
+                           Register last_java_fp,
+                           address last_java_pc,
+                           Register tmp);
 
   void reset_last_Java_frame(Register thread, bool clear_fp);
 
@@ -487,8 +495,8 @@ class MacroAssembler: public Assembler {
   void verify_tlab(Register t1, Register t2);
 
   // the follow two might use AT register, be sure you have no meanful data in AT before you call them
-  void increment(Register reg, int imm);
-  void decrement(Register reg, int imm);
+  void increment(Register reg, int imm = 1);
+  void decrement(Register reg, int imm = 1);
   void increment(Address addr, int imm = 1);
   void decrement(Address addr, int imm = 1);
 
@@ -525,6 +533,10 @@ class MacroAssembler: public Assembler {
   void jmp(address entry);
   void jmp(address entry, relocInfo::relocType rtype);
   void jmp_far(Label& L); // patchable
+
+  typedef void (MacroAssembler::*reg_addr_insn)(Register r, address dst);
+
+  void wrap_label(Register r, Label &L, reg_addr_insn insn);
 
   /* branches may exceed 16-bit offset */
   void b_far(address entry);
@@ -643,8 +655,10 @@ class MacroAssembler: public Assembler {
   void andr(Register rd, Register rj, Register rk) { AND(rd, rj, rk); }
   void xorr(Register rd, Register rj, Register rk) { XOR(rd, rj, rk); }
   void orr (Register rd, Register rj, Register rk) {  OR(rd, rj, rk); }
-  void lea (Register rd, Address src);
-  void lea(Register dst, AddressLiteral adr);
+  void lea(Register rd, Address src);
+  void lea(Register dst, AddressLiteral addr);
+  void lea(Register Rd, const address addr);
+  void lea(Register dst, Label& addr);
   void lea_long(Register dst, AddressLiteral adr);
   static int  patched_branch(int dest_pos, int inst, int inst_pos);
 
