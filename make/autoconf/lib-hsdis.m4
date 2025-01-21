@@ -111,6 +111,14 @@ AC_DEFUN([LIB_SETUP_HSDIS_LLVM],
     HSDIS_CFLAGS=`$LLVM_CONFIG --cflags`
     HSDIS_LDFLAGS=`$LLVM_CONFIG --ldflags`
     HSDIS_LIBS=`$LLVM_CONFIG --libs $OPENJDK_TARGET_CPU_ARCH ${OPENJDK_TARGET_CPU_ARCH}disassembler`
+    if test "x$HSDIS_CFLAGS" = x; then
+      AC_MSG_NOTICE([llvm-config in $LLVM_DIR cannot produce valid CFLAGS])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+    if test "x$HSDIS_LDFLAGS" = x; then
+      AC_MSG_NOTICE([llvm-config in $LLVM_DIR cannot produce valid LDFLAGS])
+      AC_MSG_ERROR([Cannot continue])
+    fi
   else
     if test "x$LLVM_DIR" = x; then
       AC_MSG_NOTICE([--with-llvm is needed on Windows to point out the LLVM home])
