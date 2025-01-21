@@ -23,6 +23,7 @@
  *
  */
 
+#include "c1/c1_Runtime1.hpp"
 #include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"

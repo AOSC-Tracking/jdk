@@ -26,8 +26,9 @@
 #ifndef CPU_LOONGARCH_ASSEMBLER_LOONGARCH_HPP
 #define CPU_LOONGARCH_ASSEMBLER_LOONGARCH_HPP
 
+#include "asm/assembler.hpp"
 #include "asm/register.hpp"
-#include "runtime/vm_version.hpp"
+#include "code/relocInfo.hpp"
 
 // Calling convention
 class Argument {
