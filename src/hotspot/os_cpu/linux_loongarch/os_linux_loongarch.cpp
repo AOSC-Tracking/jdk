@@ -78,15 +78,9 @@
 #define REG_FP 22
 
 NOINLINE address os::current_stack_pointer() {
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wuninitialized"
-#endif
-  register void *sp __asm__("$r3");
+  void *sp;
+  asm("add.d %0, $r3, $r0" : "=r"(sp));
   return (address)sp;
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 }
 
 char* os::non_memory_address_word() {
