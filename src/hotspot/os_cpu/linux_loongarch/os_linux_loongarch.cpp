@@ -79,8 +79,15 @@
 #define REG_FP 22
 
 NOINLINE address os::current_stack_pointer() {
-  register void *sp __asm__ ("$r3");
-  return (address) sp;
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wuninitialized"
+#endif
+  register void *sp __asm__("$r3");
+  return (address)sp;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 }
 
 char* os::non_memory_address_word() {
@@ -279,9 +286,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy;
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
       }
