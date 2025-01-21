@@ -1174,7 +1174,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
             if (MachOper::notAnOper(m->_opnds[l])) {
               outputStream *os = tty;
               os->print("Node %s ", m->Name());
-              os->print("has invalid opnd %d: %p\n", l, m->_opnds[l]);
+              os->print("has invalid opnd %d: %p\n", l, (void *)m->_opnds[l]);
               assert(0, "Invalid operands, see inline trace in hs_err_pid file.");
             }
           }

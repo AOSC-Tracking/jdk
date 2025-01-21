@@ -322,7 +322,7 @@ public:
   }
 
 public:
-  static const uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;;
+  static const uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;
 
   // The address p points to an object inside the output buffer. When the archive is mapped
   // at the requested address, what's the offset of this object from _requested_static_archive_bottom?

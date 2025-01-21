@@ -179,10 +179,11 @@ Klass* AOTConstantPoolResolver::find_loaded_class(Thread* current, oop class_loa
   } else if (h_loader() == SystemDictionary::java_platform_loader()) {
     return find_loaded_class(current, nullptr, name);
   } else {
-    assert(h_loader() == nullptr, "This function only works for boot/platform/app loaders %p %p %p",
-           cast_from_oop<address>(h_loader()),
-           cast_from_oop<address>(SystemDictionary::java_system_loader()),
-           cast_from_oop<address>(SystemDictionary::java_platform_loader()));
+    assert(h_loader() == nullptr,
+           "This function only works for boot/platform/app loaders %p %p %p",
+           cast_from_oop<void *>(h_loader()),
+           cast_from_oop<void *>(SystemDictionary::java_system_loader()),
+           cast_from_oop<void *>(SystemDictionary::java_platform_loader()));
   }
 
   return nullptr;

@@ -58,17 +58,17 @@ void ValueType::initialize() {
   VALUE_TYPE_STORAGE(name, type);                                  \
   name = ::new(static_cast<void*>(VALUE_TYPE_STORAGE_NAME(name))) type(__VA_ARGS__)
 
-  VALUE_TYPE(voidType    , VoidType);
-  VALUE_TYPE(intType     , IntType);
-  VALUE_TYPE(longType    , LongType);
-  VALUE_TYPE(floatType   , FloatType);
-  VALUE_TYPE(doubleType  , DoubleType);
-  VALUE_TYPE(objectType  , ObjectType);
-  VALUE_TYPE(arrayType   , ArrayType);
-  VALUE_TYPE(instanceType, InstanceType);
-  VALUE_TYPE(classType   , ClassType);
-  VALUE_TYPE(addressType , AddressType);
-  VALUE_TYPE(illegalType , IllegalType);
+  VALUE_TYPE(voidType    , VoidType      ,);
+  VALUE_TYPE(intType     , IntType       ,);
+  VALUE_TYPE(longType    , LongType      ,);
+  VALUE_TYPE(floatType   , FloatType     ,);
+  VALUE_TYPE(doubleType  , DoubleType    ,);
+  VALUE_TYPE(objectType  , ObjectType    ,);
+  VALUE_TYPE(arrayType   , ArrayType     ,);
+  VALUE_TYPE(instanceType, InstanceType  ,);
+  VALUE_TYPE(classType   , ClassType     ,);
+  VALUE_TYPE(addressType , AddressType   ,);
+  VALUE_TYPE(illegalType , IllegalType   ,);
 
   VALUE_TYPE(intZero     , IntConstant   , 0);
   VALUE_TYPE(intOne      , IntConstant   , 1);

@@ -204,7 +204,7 @@ bool NodeHash::hash_delete( const Node *n ) {
   }
   uint key = hash & (_max-1);
   uint stride = key | 0x01;
-  debug_only( uint counter = 0; );
+  debug_only( uint counter = 0; )
   for( ; /* (k != nullptr) && (k != _sentinel) */; ) {
     debug_only( counter++ );
     NOT_PRODUCT( _delete_probes++ );

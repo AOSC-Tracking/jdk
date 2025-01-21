@@ -1283,8 +1283,7 @@ nmethod::nmethod(
   _deoptimization_generation(0),
   _gc_epoch(CodeCache::gc_epoch()),
   _method(method),
-  _native_receiver_sp_offset(basic_lock_owner_sp_offset),
-  _native_basic_lock_sp_offset(basic_lock_sp_offset)
+  _sync_offs(nmethod_sync_offsets(basic_lock_owner_sp_offset, basic_lock_sp_offset))
 {
   {
     debug_only(NoSafepointVerifier nsv;)

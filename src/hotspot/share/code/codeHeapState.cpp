@@ -688,13 +688,19 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
       // Do not assert here, just check, print error message and return.
       // This is a diagnostic function. It is not supposed to tear down the VM.
       if ((char*)h <  low_bound) {
-        insane = true; ast->print_cr("Sanity check: HeapBlock @%p below low bound (%p)", (char*)h, low_bound);
+        insane = true;
+        ast->print_cr("Sanity check: HeapBlock @%p below low bound (%p)",
+                      (void *)h, (void *)low_bound);
       }
       if ((char*)h >  (low_bound + res_size)) {
-        insane = true; ast->print_cr("Sanity check: HeapBlock @%p outside reserved range (%p)", (char*)h, low_bound + res_size);
+        insane = true;
+        ast->print_cr("Sanity check: HeapBlock @%p outside reserved range (%p)",
+                      (void *)h, (void *)(low_bound + res_size));
       }
       if ((char*)h >  (low_bound + size)) {
-        insane = true; ast->print_cr("Sanity check: HeapBlock @%p outside used range (%p)", (char*)h, low_bound + size);
+        insane = true;
+        ast->print_cr("Sanity check: HeapBlock @%p outside used range (%p)",
+                      (void *)h, (void *)(low_bound + size));
       }
       if (ix_end   >= granules) {
         insane = true; ast->print_cr("Sanity check: end index (%d) out of bounds (" SIZE_FORMAT ")", ix_end, granules);
@@ -1208,7 +1214,11 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         FreeArray[ix].n_gapBlocks++;
         lenSum += h->length()<<log2_seg_size;
         if (((address)h < ((address)FreeArray[ix].start+FreeArray[ix].len)) || (h >= FreeArray[ix+1].start)) {
-          out->print_cr("unsorted occupied CodeHeap block found @ %p, gap interval [%p, %p)", h, (address)FreeArray[ix].start+FreeArray[ix].len, FreeArray[ix+1].start);
+          out->print_cr(
+              "unsorted occupied CodeHeap block found @ %p, gap interval [%p, %p)",
+              (void *)h,
+              (void *)((address)FreeArray[ix].start + FreeArray[ix].len),
+              (void *)FreeArray[ix + 1].start);
         }
       }
       if (lenSum != FreeArray[ix].gap) {

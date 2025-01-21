@@ -469,7 +469,7 @@ void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
   if (UseCompressedOops) {
     if (UseG1GC) {
       address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
-      log_info(cds, heap)("Heap end = %p", heap_end);
+      log_info(cds, heap)("Heap end = %p", (void *)heap_end);
       _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
       _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
       assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
@@ -741,7 +741,7 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
     Metadata* native_ptr = *buffered_field_addr;
     guarantee(native_ptr != nullptr, "sanity");
     guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
-              "Metadata %p should have been archived", native_ptr);
+              "Metadata %p should have been archived", (void *)native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);

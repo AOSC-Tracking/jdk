@@ -1293,7 +1293,7 @@ private:
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
 
-  DEBUG_ONLY( const bool _is_trace; );
+  DEBUG_ONLY( const bool _is_trace; )
 
   static const MemNode* mem_ref_not_null(const MemNode* mem_ref) {
     assert(mem_ref != nullptr, "not nullptr");

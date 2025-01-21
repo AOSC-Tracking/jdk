@@ -1575,7 +1575,7 @@ void Parse::do_one_block() {
       break;
     }
 
-    NOT_PRODUCT( parse_histogram()->set_initial_state(bc()); );
+    NOT_PRODUCT( parse_histogram()->set_initial_state(bc()); )
 
 #ifdef ASSERT
     int pre_bc_sp = sp();
@@ -1592,7 +1592,7 @@ void Parse::do_one_block() {
 
     do_exceptions();
 
-    NOT_PRODUCT( parse_histogram()->record_change(); );
+    NOT_PRODUCT( parse_histogram()->record_change(); )
 
     if (log != nullptr)
       log->clear_context();  // skip marker if nothing was printed

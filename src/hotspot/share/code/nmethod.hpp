@@ -161,6 +161,25 @@ class FailedSpeculation;
 class JVMCINMethodData;
 #endif
 
+class nmethod_sync_offsets {
+public:
+  // These are used for compiled synchronized native methods to
+  // locate the owner and stack slot for the BasicLock. They are
+  // needed because there is no debug information for compiled native
+  // wrappers and the oop maps are insufficient to allow
+  // frame::retrieve_receiver() to work. Currently they are expected
+  // to be byte offsets from the Java stack pointer for maximum code
+  // sharing between platforms. JVMTI's GetLocalInstance() uses these
+  // offsets to find the receiver for non-static native wrapper frames.
+  ByteSize _native_receiver_sp_offset;
+  ByteSize _native_basic_lock_sp_offset;
+
+  inline nmethod_sync_offsets(ByteSize receiver_sp_offset,
+                              ByteSize basic_lock_sp_offset)
+      : _native_receiver_sp_offset(receiver_sp_offset),
+        _native_basic_lock_sp_offset(basic_lock_sp_offset) {}
+};
+
 class nmethod : public CodeBlob {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -181,18 +200,7 @@ class nmethod : public CodeBlob {
   union {
     // To support simple linked-list chaining of nmethods:
     nmethod*  _osr_link; // from InstanceKlass::osr_nmethods_head
-    struct {
-      // These are used for compiled synchronized native methods to
-      // locate the owner and stack slot for the BasicLock. They are
-      // needed because there is no debug information for compiled native
-      // wrappers and the oop maps are insufficient to allow
-      // frame::retrieve_receiver() to work. Currently they are expected
-      // to be byte offsets from the Java stack pointer for maximum code
-      // sharing between platforms. JVMTI's GetLocalInstance() uses these
-      // offsets to find the receiver for non-static native wrapper frames.
-      ByteSize _native_receiver_sp_offset;
-      ByteSize _native_basic_lock_sp_offset;
-    };
+    nmethod_sync_offsets _sync_offs;
   };
 
   // nmethod's read-only data
@@ -978,11 +986,11 @@ public:
   // JVMTI's GetLocalInstance() support
   ByteSize native_receiver_sp_offset() {
     assert(is_native_method(), "sanity");
-    return _native_receiver_sp_offset;
+    return _sync_offs._native_receiver_sp_offset;
   }
   ByteSize native_basic_lock_sp_offset() {
     assert(is_native_method(), "sanity");
-    return _native_basic_lock_sp_offset;
+    return _sync_offs._native_basic_lock_sp_offset;
   }
 
   // support for code generation

@@ -655,8 +655,8 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           progress = true;
 
           jmp_size[i] = new_size;
-          DEBUG_ONLY( jmp_target[i] = bnum; );
-          DEBUG_ONLY( jmp_rule[i] = mach->rule(); );
+          DEBUG_ONLY( jmp_target[i] = bnum; )
+          DEBUG_ONLY( jmp_rule[i] = mach->rule(); )
         } else {
           // The jump distance is not short, try again during next iteration.
           has_short_branch_candidate = true;
@@ -3016,7 +3016,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
       pinch = new Node(1); // Pinch point to-be
     }
     if (pinch->_idx >= _regalloc->node_regs_max_index()) {
-      DEBUG_ONLY( pinch->dump(); );
+      DEBUG_ONLY( pinch->dump(); )
       assert(false, "too many D-U pinch points: %d >= %d", pinch->_idx, _regalloc->node_regs_max_index());
       _cfg->C->record_method_not_compilable("too many D-U pinch points");
       return;

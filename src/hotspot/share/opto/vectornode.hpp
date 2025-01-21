@@ -999,7 +999,7 @@ class ExpandVNode: public VectorNode {
 // Load Vector from memory
 class LoadVectorNode : public LoadNode {
  private:
-  DEBUG_ONLY( bool _must_verify_alignment = false; );
+  DEBUG_ONLY( bool _must_verify_alignment = false; )
  public:
   LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency) {
@@ -1072,7 +1072,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
 class StoreVectorNode : public StoreNode {
  private:
   const TypeVect* _vect_type;
-  DEBUG_ONLY( bool _must_verify_alignment = false; );
+  DEBUG_ONLY( bool _must_verify_alignment = false; )
  public:
   StoreVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
     : StoreNode(c, mem, adr, at, val, MemNode::unordered), _vect_type(val->bottom_type()->is_vect()) {

@@ -568,8 +568,8 @@ extern "C" DEBUGEXPORT void findbcp(intptr_t method, intptr_t bcp) {
   Command c("findbcp");
   Method* mh = (Method*)method;
   if (!mh->is_native()) {
-    tty->print_cr("bci_from(%p) = %d; print_codes():",
-                        mh, mh->bci_from(address(bcp)));
+    tty->print_cr("bci_from(%p) = %d; print_codes():", (void *)mh,
+                  mh->bci_from(address(bcp)));
     mh->print_codes_on(tty);
   }
 }

@@ -120,7 +120,8 @@ void AOTClassLinker::add_new_candidate(InstanceKlass* ik) {
 
   if (log_is_enabled(Info, cds, aot, link)) {
     ResourceMark rm;
-    log_info(cds, aot, link)("%s %s %p", class_category_name(ik), ik->external_name(), ik);
+    log_info(cds, aot, link)("%s %s %p", class_category_name(ik),
+                             ik->external_name(), (void *)ik);
   }
 }
 

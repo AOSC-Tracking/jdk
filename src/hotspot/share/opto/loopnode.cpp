@@ -4941,7 +4941,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   // Do verify graph edges in any case
-  NOT_PRODUCT( C->verify_graph_edges(); );
+  NOT_PRODUCT( C->verify_graph_edges(); )
 
   if (!do_split_ifs) {
     // We saw major progress in Split-If to get here.  We forced a
@@ -6800,8 +6800,10 @@ void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) co
         Node* m = C->root()->find(k);
         if (m && m->outcnt() > 0) {
           if (!(has_ctrl(m) && get_ctrl_no_update(m) == n)) {
-            tty->print_cr("*** BROKEN CTRL ACCESSOR!  _loop_or_ctrl[k] is %p, ctrl is %p",
-                          _loop_or_ctrl[k], has_ctrl(m) ? get_ctrl_no_update(m) : nullptr);
+            tty->print_cr(
+                "*** BROKEN CTRL ACCESSOR!  _loop_or_ctrl[k] is %p, ctrl is %p",
+                (void *)_loop_or_ctrl[k],
+                has_ctrl(m) ? (void *)get_ctrl_no_update(m) : nullptr);
           }
           tty->sp(2 * loop->_nest + 1);
           m->dump();

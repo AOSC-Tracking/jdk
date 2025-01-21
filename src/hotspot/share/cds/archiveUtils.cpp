@@ -239,8 +239,10 @@ void DumpRegion::commit_to(char* newtop) {
   } else {
     which = "shared";
   }
-  log_debug(cds)("Expanding %s spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
-                 which, commit, _vs->actual_committed_size(), _vs->high());
+  log_debug(cds)(
+      "Expanding %s spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(
+          9) " bytes ending at %p]",
+      which, commit, _vs->actual_committed_size(), (void *)_vs->high());
 }
 
 char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {

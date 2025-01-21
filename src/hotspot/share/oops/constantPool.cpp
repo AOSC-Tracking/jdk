@@ -150,7 +150,7 @@ void ConstantPool::release_C_heap_structures() {
 }
 
 void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstantPool): %p", this);
+  log_trace(cds)("Iter(ConstantPool): %p", (void *)this);
 
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
@@ -1357,7 +1357,8 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     break;
 
   default:
-    fatal("unexpected constant tag at CP %p[%d/%d] = %d", this_cp(), cp_index, cache_index, tag.value());
+    fatal("unexpected constant tag at CP %p[%d/%d] = %d", (void *)this_cp(),
+          cp_index, cache_index, tag.value());
     break;
   }
 
