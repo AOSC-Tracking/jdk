@@ -42,6 +42,7 @@
 #include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "register_loongarch.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -3608,7 +3609,7 @@ void TemplateTable::invokedynamic(int byte_no) {
 // T1 : object size
 // A1 : cpool
 // A2 : cp index
-// return object in FSR
+// return object in V0
 void TemplateTable::_new() {
   transition(vtos, atos);
   __ get_unsigned_2_byte_index_at_bcp(A2, 1);
@@ -3653,7 +3654,7 @@ void TemplateTable::_new() {
   //  Go to slow path.
 
   if (UseTLAB) {
-    __ tlab_allocate(FSR, T0, 0, noreg, T2, slow_case);
+    __ tlab_allocate(V0, T0, 0, noreg, T2, slow_case);
 
     if (ZeroTLAB) {
       // the fields have been already cleared
@@ -3662,29 +3663,51 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ li(AT, - sizeof(oopDesc));
-    __ add_d(T0, T0, AT);
+    // T0 = instance size - obj header size
+    if (UseCompactObjectHeaders) {
+      assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong),
+             "oop base offset must be 8-byte-aligned");
+      __ addi_d(T0, T0, -(int)oopDesc::base_offset_in_bytes());
+    } else {
+      __ addi_d(T0, T0, -(int)sizeof(oopDesc));
+    }
     __ beqz(T0, initialize_header);
 
     // initialize remaining object fields: T0 is a multiple of 2
     {
-       Label loop;
-       __ add_d(T1, FSR, T0);
+      int oop_base_off;
+      if (UseCompactObjectHeaders) {
+        assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong),
+               "oop base offset must be 8-byte-aligned");
+        oop_base_off = oopDesc::base_offset_in_bytes();
+      } else {
+        oop_base_off = sizeof(oopDesc);
+      }
 
-       __ bind(loop);
-       __ addi_d(T1, T1, -oopSize);
-       __ st_d(R0, T1, sizeof(oopDesc));
-       __ bne(T1, FSR, loop); // dont clear header
+      // T1 = obj + T0 (obj body size)
+      __ add_d(T1, V0, T0);
+
+      Label loop;
+      __ bind(loop);
+      // T1 = T1 - oopSize
+      __ addi_d(T1, T1, -oopSize);
+      // *(T1 + obj hdr size) = 0
+      __ st_d(R0, T1, oop_base_off);
+      __ bne(T1, V0, loop); // dont clear header
     }
 
     // klass in T3,
     // initialize object header only.
     __ bind(initialize_header);
-    __ li(AT, (long)markWord::prototype().value());
-    __ st_d(AT, FSR, oopDesc::mark_offset_in_bytes());
-
-    __ store_klass_gap(FSR, R0);
-    __ store_klass(FSR, T3);
+    if (UseCompactObjectHeaders) {
+      __ ld_d(T0, Address(T3, Klass::prototype_header_offset()));
+      __ st_d(T0, Address(V0, oopDesc::mark_offset_in_bytes()));
+    } else {
+      __ li(AT, (long)markWord::prototype().value());
+      __ st_d(AT, V0, oopDesc::mark_offset_in_bytes());
+      __ store_klass_gap(V0, R0); // zero klass gap for compressed oops
+      __ store_klass(V0, T3);
+    }
 
     if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath
@@ -3700,7 +3723,7 @@ void TemplateTable::_new() {
   __ bind(slow_case);
   __ get_constant_pool(A1);
   __ get_unsigned_2_byte_index_at_bcp(A2, 1);
-  call_VM(FSR, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), A1, A2);
+  call_VM(V0, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), A1, A2);
 
   // continue
   __ bind(done);
