@@ -295,14 +295,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         const uint64_t *detail_msg_ptr
           = (uint64_t*)(pc + 4/*NativeInstruction::instruction_size*/);
         const char *detail_msg = (const char *)*detail_msg_ptr;
-        const char *msg = "stop";
+        char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
         }
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
+        VMError::report_and_die(thread, sig, pc, info, uc, "%s", detail_msg);
 
         ShouldNotReachHere();
       }
