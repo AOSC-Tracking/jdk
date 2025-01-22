@@ -86,5 +86,5 @@ void    DoSplashSetScaleFactor(float scaleFactor) {
 
 char*    DoSplashGetScaledImageName(const char* fileName, const char* jarName,
                                     float* scaleFactor) {
-    INVOKE(SplashGetScaledImageName, NULL)(fileName, jarName, scaleFactor);
+    INVOKE(SplashGetScaledImageName, ((char*)NULL))(fileName, jarName, scaleFactor);
 }
