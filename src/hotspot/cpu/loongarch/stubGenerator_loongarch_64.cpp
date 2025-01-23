@@ -5123,6 +5123,29 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // j_rarg0 = jobject receiver
+  // xmethod = Method* result
+  address generate_upcall_stub_load_target() {
+
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(j_rarg0, SCR2, SCR1);
+      // Load target method from receiver
+    __ load_heap_oop(Rmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), SCR2, SCR1);
+    __ load_heap_oop(Rmethod, Address(Rmethod, java_lang_invoke_LambdaForm::vmentry_offset()), SCR2, SCR1);
+    __ load_heap_oop(Rmethod, Address(Rmethod, java_lang_invoke_MemberName::method_offset()), SCR2, SCR1);
+    __ access_load_at(T_ADDRESS, IN_HEAP, Rmethod,
+                      Address(Rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ st_d(Rmethod, Address(TREG, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ jr(RA);
+
+    return start;
+  }
+
 #undef __
 #define __ masm->
 
