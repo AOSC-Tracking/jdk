@@ -46,7 +46,7 @@ using MacroAssembler::null_check;
     Label&   slow_case          // continuation point if fast allocation fails
   );
 
-  void initialize_header(Register obj, Register klass, Register len, Register t1);
+  void initialize_header(Register obj, Register klass, Register len, Register t1, Register t2);
   void initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2);
 
   // locking

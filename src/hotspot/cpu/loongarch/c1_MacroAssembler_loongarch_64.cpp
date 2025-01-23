@@ -33,7 +33,6 @@
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -151,21 +150,17 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes,
 }
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len,
-                                          Register t1) {
+                                          Register t1, Register t2) {
   assert_different_registers(obj, klass, len);
-  if (UseCompactObjectHeaders) {
-    ld_d(t1, Address(klass, Klass::prototype_header_offset()));
-    st_d(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+  // This assumes that all prototype bits fit in an int32_t
+  li(t1, (int32_t)(intptr_t)markWord::prototype().value());
+  st_d(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+  if (UseCompressedClassPointers) { // Take care not to kill klass
+    encode_klass_not_null(t1, klass);
+    st_w(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
   } else {
-    // This assumes that all prototype bits fit in an int32_t
-    li(t1, (int32_t)(intptr_t)markWord::prototype().value());
-    st_d(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
-    if (UseCompressedClassPointers) { // Take care not to kill klass
-      encode_klass_not_null(t1, klass);
-      st_w(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
-    } else {
-      st_d(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
-    }
+    st_d(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
 
   if (len->is_valid()) {
@@ -176,7 +171,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
       // Clear gap/first 4 bytes following the length field.
       st_w(R0, Address(obj, base_offset));
     }
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
+  } else if (UseCompressedClassPointers) {
     store_klass_gap(obj, R0);
   }
 }
@@ -226,7 +221,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
          "con_size_in_bytes is not multiple of alignment");
   const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
-  initialize_header(obj, klass, noreg, t1);
+  initialize_header(obj, klass, noreg, t1, t2);
 
   if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
      // clear rest of allocated space
@@ -277,7 +272,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   try_allocate(obj, arr_size, 0, t1, t2, slow_case);
 
-  initialize_header(obj, klass, len, t1);
+  initialize_header(obj, klass, len, t1, t2);
 
   // Align-up to word boundary, because we clear the 4 bytes potentially
   // following the length field in initialize_header().

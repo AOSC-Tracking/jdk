@@ -277,15 +277,7 @@ class MacroAssembler: public Assembler {
 
   // oop manipulations
   void load_klass(Register dst, Register src);
-  // load narrow klass ptr from obj ptr (src) to dst, 2 insns
-  void load_narrow_klass_compact(Register dst, Register src);
   void store_klass(Register dst, Register src);
-  // compare if obj1 and obj2 has the same (or diff) klass ptr
-  // and jump to L.
-  void cmp_klass(Register obj1, Register obj2, Register tmp1, Register tmp2,
-                 Label &L, bool equal, bool far);
-  void cmp_klass_compressed(Register obj, Register klass, Register tmp1,
-                 Label &L, bool equal);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register tmp2);
@@ -570,7 +562,6 @@ class MacroAssembler: public Assembler {
   static bool reachable_from_branch_short(jlong offs);
 
   void patchable_jump_far(Register ra, jlong offs);
-  // 2 insns if force_patchable, 1 insn if not
   void patchable_jump(address target, bool force_patchable = false);
   void patchable_call(address target, address call_size = 0);
 

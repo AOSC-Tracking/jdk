@@ -492,49 +492,6 @@ void MacroAssembler::wrap_label(Register r, Label &L, reg_addr_insn insn) {
   }
 }
 
-void MacroAssembler::cmp_klass(Register obj1, Register obj2, Register tmp1,
-                               Register tmp2, Label &L, bool equal, bool far) {
-  if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(tmp1, obj1);
-    load_narrow_klass_compact(tmp2, obj2);
-  } else if (UseCompressedClassPointers) {
-    ld_wu(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
-    ld_wu(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
-  } else {
-    ld_d(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
-    ld_d(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
-  }
-  if (equal) {
-    if (far) {
-      beq_far(tmp1, tmp2, L);
-    } else {
-      beq(tmp1, tmp2, L);
-    }
-  } else {
-    if (far) {
-      bne_far(tmp1, tmp2, L);
-    } else {
-      bne(tmp1, tmp2, L);
-    }
-  }
-}
-
-void MacroAssembler::cmp_klass_compressed(Register obj, Register klass,
-                                          Register tmp1, Label &L, bool equal) {
-  if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(tmp1, obj);
-  } else if (UseCompressedClassPointers) {
-    ld_wu(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
-  } else {
-    ld_d(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
-  }
-  if (equal) {
-    beq(tmp1, klass, L);
-  } else {
-    bne(tmp1, klass, L);
-  }
-}
-
 // Move an oop into a register.
 void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
@@ -653,10 +610,7 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
 }
 
 int MacroAssembler::ic_check_size() {
-  return 4 * (/* beq */ 1 + /* patchable jump(force patchable) */ 2 +
-              /* load klass */
-              (UseCompactObjectHeaders ? 3 /* load_narrow_klass_compact + 1 */
-                                       : 2 /* ld + ld */));
+  return 4 * 5;
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
@@ -672,10 +626,7 @@ int MacroAssembler::ic_check(int end_alignment) {
   align(end_alignment, offset() + ic_check_size());
   int uep_offset = offset();
 
-  if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(tmp1, receiver);
-    ld_wu(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
-  } else if (UseCompressedClassPointers) {
+  if (UseCompressedClassPointers) {
     ld_wu(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
     ld_wu(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
   } else {
@@ -2098,10 +2049,7 @@ void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) 
 
 // for UseCompressedOops Option
 void MacroAssembler::load_klass(Register dst, Register src) {
-  if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst);
-  } else if (UseCompressedClassPointers) {
+  if(UseCompressedClassPointers){
     ld_wu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst);
   } else {
@@ -2109,14 +2057,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
-  assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
-  ld_d(dst, Address(src, oopDesc::mark_offset_in_bytes()));
-  srli_d(dst, dst, markWord::klass_shift);
-}
-
 void MacroAssembler::store_klass(Register dst, Register src) {
-  assert(!UseCompactObjectHeaders, "not with compact headers");
   if(UseCompressedClassPointers){
     encode_klass_not_null(src);
     st_w(src, dst, oopDesc::klass_offset_in_bytes());
@@ -2126,7 +2067,6 @@ void MacroAssembler::store_klass(Register dst, Register src) {
 }
 
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
-  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     st_w(src, dst, oopDesc::klass_gap_offset_in_bytes());
   }
@@ -2454,15 +2394,11 @@ void MacroAssembler::decode_klass_not_null(Register r) {
         add_d(r, r, AT);
       }
     } else {
-      assert(CompressedKlassPointers::shift() == Address::times_8,
-             "klass not aligned on 64bits?");
       li(AT, (int64_t)CompressedKlassPointers::base());
       alsl_d(r, r, AT, Address::times_8 - 1);
     }
   } else {
     if (CompressedKlassPointers::shift() != 0) {
-      assert(CompressedKlassPointers::shift() == Address::times_8,
-             "klass not aligned on 64bits?");
       slli_d(r, r, CompressedKlassPointers::shift());
     }
   }
@@ -2486,15 +2422,11 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
           add_d(dst, dst, src);
         }
       } else {
-        assert(CompressedKlassPointers::shift() == Address::times_8,
-               "klass not aligned on 64bits?");
         li(dst, (int64_t)CompressedKlassPointers::base());
         alsl_d(dst, src, dst, Address::times_8 - 1);
       }
     } else {
       if (CompressedKlassPointers::shift() != 0) {
-        assert(CompressedKlassPointers::shift() == Address::times_8,
-               "klass not aligned on 64bits?");
         slli_d(dst, src, CompressedKlassPointers::shift());
       } else {
         move(dst, src);

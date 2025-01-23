@@ -4276,7 +4276,6 @@ instruct loadKlass(mRegP dst, memory mem) %{
 // Load narrow Klass Pointer
 instruct loadNKlass(mRegN dst, memory mem)
 %{
-  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(125);
@@ -4286,25 +4285,6 @@ instruct loadNKlass(mRegN dst, memory mem)
     assert(disp_reloc == relocInfo::none, "cannot have disp");
     __ loadstore_enc($dst$$Register, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp, C2_MacroAssembler::LOAD_U_INT);
   %}
-  ins_pipe( ialu_load );
-%}
-
-instruct loadNKlassCompactHeaders(mRegN dst, memory mem)
-%{
-  predicate(UseCompactObjectHeaders);
-  match(Set dst (LoadNKlass mem));
-
-  ins_cost(125);
-  format %{
-    "ld_wu    $dst, $mem\t# compressed klass ptr, shifted\n\t"
-    "srli_d   $dst, $dst, markWord::klass_shift_at_offset"
-  %}
-
-  ins_encode %{
-    __ ld_wu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
-    __ srli_d(as_Register($dst$$reg), as_Register($dst$$reg), (unsigned) markWord::klass_shift_at_offset);
-  %}
-
   ins_pipe( ialu_load );
 %}
 
