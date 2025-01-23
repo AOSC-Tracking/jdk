@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -30,7 +31,6 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
 
-#define __ masm->
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -41,6 +41,8 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 #define TIMES_OOP (UseCompressedOops ? Address::times_4 : Address::times_8)
+
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, masm)->
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp,

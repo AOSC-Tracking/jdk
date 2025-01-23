@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/compiledIC.hpp"
@@ -40,7 +41,7 @@
 // machine-dependent part of VtableStubs: create VtableStub of correct size and
 // initialize its code
 
-#define __ masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, masm)->
 
 #ifndef PRODUCT
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index);

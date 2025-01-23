@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -38,7 +39,7 @@
 #include "gc/shared/c2/barrierSetC2.hpp"
 #endif // COMPILER2
 
-#define __ masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, masm)->
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register dst, Address src, Register tmp1, Register tmp2) {

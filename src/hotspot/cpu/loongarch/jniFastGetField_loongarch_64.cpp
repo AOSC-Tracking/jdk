@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/codeBlob.hpp"
@@ -34,7 +35,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/safepoint.hpp"
 
-#define __ masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, masm)->
 
 #define BUFFER_SIZE 30*wordSize
 

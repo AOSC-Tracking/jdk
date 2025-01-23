@@ -22,6 +22,7 @@
  * questions.
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
@@ -35,7 +36,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "vmreg_loongarch.inline.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // for callee saved regs, according to the caller's ABI
 static int compute_reg_save_area_size(const ABIDescriptor& abi) {

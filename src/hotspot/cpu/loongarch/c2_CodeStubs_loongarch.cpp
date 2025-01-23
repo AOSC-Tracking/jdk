@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/c2_CodeStubs.hpp"
@@ -30,7 +31,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
-#define __ masm.
+#define __ Disassembler::hook<C2_MacroAssembler>(__FILE__, __LINE__, &masm)->
 
 int C2SafepointPollStub::max_size() const {
   return 4 * 4;

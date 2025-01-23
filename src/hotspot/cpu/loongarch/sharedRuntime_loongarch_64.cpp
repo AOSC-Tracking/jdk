@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
@@ -53,7 +54,7 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
 
-#define __ masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, masm)->
 
 const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
 

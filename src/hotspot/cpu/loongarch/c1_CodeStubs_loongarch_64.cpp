@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
@@ -35,7 +36,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_loongarch.inline.hpp"
 
-#define __ ce->masm()->
+#define __ Disassembler::hook<C1_MacroAssembler>(__FILE__, __LINE__, ce->masm())->
 
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);

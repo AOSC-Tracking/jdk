@@ -27,7 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
 
-#define __ masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, masm)->
 
 void ModRefBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                                    Register src, Register dst, Register count, RegSet saved_regs) {

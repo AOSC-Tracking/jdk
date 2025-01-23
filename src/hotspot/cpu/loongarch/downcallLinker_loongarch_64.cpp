@@ -22,6 +22,7 @@
  * questions.
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/codeBlob.hpp"
@@ -34,8 +35,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 
-#define __ _masm->
-
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 static const int native_invoker_code_base_size = 256;
 static const int native_invoker_size_per_arg = 8;
 

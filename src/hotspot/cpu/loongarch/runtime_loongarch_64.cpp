@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #ifdef COMPILER2
 #include "asm/macroAssembler.hpp"
@@ -37,7 +38,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "vmreg_loongarch.inline.hpp"
 
-#define __ masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, masm)->
 
 //------------------------------generate_uncommon_trap_blob--------------------
 void OptoRuntime::generate_uncommon_trap_blob() {

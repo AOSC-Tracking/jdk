@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "asm/assembler.hpp"
@@ -53,10 +54,11 @@
 
 NEEDS_CLEANUP // remove this definitions?
 
-#define __ _masm->
+#define __ Disassembler::hook<C1_MacroAssembler>(__FILE__, __LINE__, _masm)->
 
-static void select_different_registers(Register preserve, Register extra,
-                                       Register &tmp1, Register &tmp2) {
+    static void
+    select_different_registers(Register preserve, Register extra,
+                               Register &tmp1, Register &tmp2) {
   if (tmp1 == preserve) {
     assert_different_registers(tmp1, tmp2, extra);
     tmp1 = extra;

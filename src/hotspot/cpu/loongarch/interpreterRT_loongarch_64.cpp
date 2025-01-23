@@ -23,6 +23,9 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
+#include "interp_masm_loongarch.hpp"
+#include "macroAssembler_loongarch.hpp"
 #include "precompiled.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -36,7 +39,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/signature.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // Implementation of SignatureHandlerGenerator
 InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(

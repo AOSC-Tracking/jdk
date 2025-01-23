@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
@@ -65,8 +66,7 @@
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
 
-#define __ _masm->
-
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else

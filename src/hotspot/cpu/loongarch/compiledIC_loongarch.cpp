@@ -23,6 +23,7 @@
  *
  */
 
+#include "compiler/disassembler.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
@@ -34,7 +35,7 @@
 
 // ----------------------------------------------------------------------------
 
-#define __ masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, masm)->
 address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark) {
   precond(__ code()->stubs()->start() != badAddress);
   precond(__ code()->stubs()->end() != badAddress);
