@@ -39,6 +39,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
+#include <cstdio>
 
 void oopDesc::print_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {

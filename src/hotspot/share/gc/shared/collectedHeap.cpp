@@ -59,6 +59,8 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include <cstdio>
 
 class ClassLoaderData;
 
