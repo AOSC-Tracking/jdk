@@ -444,6 +444,9 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   # Force en-US environment
   UTIL_ADD_JVM_ARG_IF_OK([-Duser.language=en -Duser.country=US],boot_jdk_jvmargs,[$JAVA])
 
+  # AOSC OS: extend stack size to address loongson3 zero-variant build failure
+  UTIL_ADD_JVM_ARG_IF_OK([-Xss256M],boot_jdk_jvmargs,[$JAVA])
+
   if test "x$BOOTJDK_USE_LOCAL_CDS" = xtrue; then
     # Use our own CDS archive
     UTIL_ADD_JVM_ARG_IF_OK([$boot_jdk_cds_args -Xshare:auto],boot_jdk_jvmargs,[$JAVA])
