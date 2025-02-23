@@ -22,6 +22,12 @@
  *
  */
 
+/*
+ * This file has been modified by Loongson Technology in 2023, These
+ * modifications are Copyright (c) 2023, Loongson Technology, and are made
+ * available on the same license terms set forth above.
+ */
+
 #include "utilities/macros.hpp"
 
 // The giant table of Node classes.
@@ -234,6 +240,7 @@ macro(StoreStoreFence)
 macro(MemBarReleaseLock)
 macro(MemBarVolatile)
 macro(MemBarStoreStore)
+macro(SameAddrLoadFence)
 macro(MergeMem)
 macro(MinI)
 macro(MinL)
