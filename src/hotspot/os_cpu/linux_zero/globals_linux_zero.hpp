@@ -32,9 +32,9 @@
 //
 
 define_pd_global(bool,  DontYieldALot,           false);
-define_pd_global(intx,  ThreadStackSize,         1536);
+define_pd_global(intx,  ThreadStackSize,         6144);
 #ifdef _LP64
-define_pd_global(intx,  VMThreadStackSize,       1024);
+define_pd_global(intx,  VMThreadStackSize,       4096);
 #else
 define_pd_global(intx,  VMThreadStackSize,       512);
 #endif // _LP64
