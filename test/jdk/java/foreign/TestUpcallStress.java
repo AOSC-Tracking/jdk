@@ -22,6 +22,12 @@
  */
 
 /*
+ * This file has been modified by Loongson Technology in 2025. These
+ * modifications are Copyright (c) 2025, Loongson Technology, and are made
+ * available on the same license terms set forth above.
+ */
+
+/*
  * @test
  * @requires jdk.foreign.linker != "FALLBACK"
  * @requires vm.compMode != "Xcomp"
