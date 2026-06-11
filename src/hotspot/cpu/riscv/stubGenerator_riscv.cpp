@@ -887,7 +887,7 @@ class StubGenerator: public StubCodeGenerator {
    *   goto copy_small;
    * }
    * bool is_backwards = step < 0;
-   * int granularity = uabs(step);
+   * int granularity = g_uabs(step);
    * count = count  *  granularity;   * count bytes
    *
    * if (is_backwards) {
