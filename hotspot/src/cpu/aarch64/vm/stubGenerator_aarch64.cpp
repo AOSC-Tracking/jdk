@@ -1149,7 +1149,7 @@ class StubGenerator: public StubCodeGenerator {
                    Register count, Register tmp, int step) {
     copy_direction direction = step < 0 ? copy_backwards : copy_forwards;
     bool is_backwards = step < 0;
-    unsigned int granularity = g_uabs(step);
+    int granularity = g_uabs(step);
     const Register t0 = r3, t1 = r4;
 
     // <= 96 bytes do inline. Direction doesn't matter because we always
