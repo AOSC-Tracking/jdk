@@ -608,7 +608,7 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
         add_debug_info_for_null_check_here(op->info());
 
         if (op->in_opr()->is_single_cpu()) {
-          _masm->null_check(op->in_opr()->as_register());
+          _masm->null_check(op->in_opr()->as_register(), -1);
         } else {
           Unimplemented();
         }
