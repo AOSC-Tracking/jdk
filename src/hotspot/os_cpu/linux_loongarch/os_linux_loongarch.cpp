@@ -279,7 +279,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         const uint64_t *detail_msg_ptr
           = (uint64_t*)(pc + 4/*NativeInstruction::instruction_size*/);
         const char *detail_msg = (const char *)*detail_msg_ptr;
-        char *msg = "stop";
+        const char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
         }
